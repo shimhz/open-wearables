@@ -19,6 +19,7 @@ from .sleep_details import SleepDetails
 from .user import User
 from .user_connection import UserConnection
 from .user_invitation_code import UserInvitationCode
+from .user_provider_priority import UserProviderPriority
 from .workout_details import WorkoutDetails
 
 __all__ = [
@@ -36,6 +37,7 @@ __all__ = [
     "User",
     "UserConnection",
     "UserInvitationCode",
+    "UserProviderPriority",
     "EventRecord",
     "EventRecordDetail",
     "SleepDetails",

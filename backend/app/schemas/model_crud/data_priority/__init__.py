@@ -25,6 +25,14 @@ from .provider_setting import (
     ProviderSettingRead,
     ProviderSettingUpdate,
 )
+from .user_provider_priority import (
+    EffectiveProviderPriorityItem,
+    EffectiveProviderPriorityListResponse,
+    UserProviderPriorityBase,
+    UserProviderPriorityBulkUpdate,
+    UserProviderPriorityResponse,
+    UserProviderPriorityUpdate,
+)
 
 __all__ = [
     # DataSource
@@ -50,4 +58,11 @@ __all__ = [
     "ProviderSettingRead",
     "ProviderSettingUpdate",
     "BulkProviderSettingsUpdate",
+    # UserProviderPriority
+    "UserProviderPriorityBase",
+    "UserProviderPriorityUpdate",
+    "UserProviderPriorityResponse",
+    "UserProviderPriorityBulkUpdate",
+    "EffectiveProviderPriorityItem",
+    "EffectiveProviderPriorityListResponse",
 ]

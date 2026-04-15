@@ -3,7 +3,11 @@ from uuid import UUID
 
 from app.database import DbSession
 from app.models import DataSource, ProviderPriority
-from app.repositories import DataSourceRepository, ProviderPriorityRepository
+from app.repositories import (
+    DataSourceRepository,
+    ProviderPriorityRepository,
+    UserProviderPriorityRepository,
+)
 from app.repositories.device_type_priority_repository import DeviceTypePriorityRepository
 from app.schemas.enums import DeviceType, ProviderName
 from app.schemas.model_crud.data_priority import (
@@ -12,9 +16,13 @@ from app.schemas.model_crud.data_priority import (
     DeviceTypePriorityBulkUpdate,
     DeviceTypePriorityListResponse,
     DeviceTypePriorityResponse,
+    EffectiveProviderPriorityItem,
+    EffectiveProviderPriorityListResponse,
     ProviderPriorityBulkUpdate,
     ProviderPriorityListResponse,
     ProviderPriorityResponse,
+    UserProviderPriorityBulkUpdate,
+    UserProviderPriorityResponse,
 )
 from app.utils.exceptions import handle_exceptions
 
@@ -23,6 +31,7 @@ class PriorityService:
     def __init__(self, log: Logger):
         self.logger = log
         self.priority_repo = ProviderPriorityRepository(ProviderPriority)
+        self.user_priority_repo = UserProviderPriorityRepository()
         self.device_type_priority_repo = DeviceTypePriorityRepository()
         self.data_source_repo = DataSourceRepository(DataSource)
 
@@ -110,13 +119,75 @@ class PriorityService:
         db_session.commit()
         return DeviceTypePriorityListResponse(items=[DeviceTypePriorityResponse.model_validate(p) for p in results])
 
+    @handle_exceptions
+    def get_effective_user_provider_priorities(
+        self,
+        db_session: DbSession,
+        user_id: UUID,
+    ) -> EffectiveProviderPriorityListResponse:
+        """Return merged priority list: user overrides win, global fills the rest."""
+        effective = self._resolve_effective_order(db_session, user_id)
+        items = [EffectiveProviderPriorityItem(provider=p, priority=pri, source=src) for p, pri, src in effective]
+        return EffectiveProviderPriorityListResponse(items=items)
+
+    @handle_exceptions
+    def update_user_provider_priority(
+        self,
+        db_session: DbSession,
+        user_id: UUID,
+        provider: ProviderName,
+        priority: int,
+    ) -> UserProviderPriorityResponse:
+        result = self.user_priority_repo.upsert(db_session, user_id, provider, priority)
+        db_session.commit()
+        return UserProviderPriorityResponse.model_validate(result)
+
+    @handle_exceptions
+    def bulk_update_user_provider_priorities(
+        self,
+        db_session: DbSession,
+        user_id: UUID,
+        update: UserProviderPriorityBulkUpdate,
+    ) -> EffectiveProviderPriorityListResponse:
+        tuples = [(p.provider, p.priority) for p in update.priorities]
+        self.user_priority_repo.bulk_update(db_session, user_id, tuples)
+        db_session.commit()
+        return self.get_effective_user_provider_priorities(db_session, user_id)
+
+    @handle_exceptions
+    def reset_user_provider_priority(
+        self,
+        db_session: DbSession,
+        user_id: UUID,
+        provider: ProviderName,
+    ) -> EffectiveProviderPriorityListResponse:
+        """Remove a user's override for one provider, reverting to global default."""
+        self.user_priority_repo.delete_by_provider(db_session, user_id, provider)
+        db_session.commit()
+        return self.get_effective_user_provider_priorities(db_session, user_id)
+
+    def _resolve_effective_order(
+        self,
+        db_session: DbSession,
+        user_id: UUID,
+    ) -> list[tuple[ProviderName, int, str]]:
+        global_order = self.priority_repo.get_priority_order(db_session)
+        user_overrides = {p.provider: p.priority for p in self.user_priority_repo.get_all_for_user(db_session, user_id)}
+        merged: dict[ProviderName, tuple[int, str]] = {p: (pri, "global") for p, pri in global_order.items()}
+        for p, pri in user_overrides.items():
+            merged[p] = (pri, "user")
+        return sorted(
+            [(p, pri, src) for p, (pri, src) in merged.items()],
+            key=lambda row: row[1],
+        )
+
     def get_priority_data_source_ids(
         self,
         db_session: DbSession,
         user_id: UUID,
     ) -> list[UUID]:
-        """Get data source IDs for a user, ordered by global priority."""
-        provider_order = self.priority_repo.get_priority_order(db_session)
+        """Get data source IDs for a user, ordered by effective (user-override-aware) priority."""
+        provider_order = {p: pri for p, pri, _ in self._resolve_effective_order(db_session, user_id)}
         device_type_order = self.device_type_priority_repo.get_priority_order(db_session)
         sources = self.data_source_repo.get_user_data_sources(db_session, user_id)
 
