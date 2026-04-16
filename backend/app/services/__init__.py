@@ -6,7 +6,9 @@ from .apple.healthkit.import_service import import_service as hk_import_service
 from .application_service import application_service
 from .archival_service import archival_service
 from .developer_service import developer_service
+from .eating_event_service import eating_event_service
 from .event_record_service import event_record_service
+from .habit_service import habit_service
 from .invitation_service import invitation_service
 from .priority_service import PriorityService
 from .refresh_token_service import refresh_token_service
@@ -41,4 +43,6 @@ __all__ = [
     "system_info_service",
     "PriorityService",
     "presigned_url_service",
+    "eating_event_service",
+    "habit_service",
 ]

@@ -7,8 +7,11 @@ from .data_point_series_archive import DataPointSeriesArchive
 from .data_source import DataSource
 from .developer import Developer
 from .device_type_priority import DeviceTypePriority
+from .eating_event import EatingEvent
 from .event_record import EventRecord
 from .event_record_detail import EventRecordDetail
+from .habit_definition import HabitDefinition
+from .habit_log import HabitLog
 from .invitation import Invitation
 from .personal_record import PersonalRecord
 from .provider_priority import ProviderPriority
@@ -29,6 +32,9 @@ __all__ = [
     "DataSource",
     "DataPointSeriesArchive",
     "DeviceTypePriority",
+    "EatingEvent",
+    "HabitDefinition",
+    "HabitLog",
     "Invitation",
     "ProviderPriority",
     "ProviderSetting",
