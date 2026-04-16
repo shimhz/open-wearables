@@ -9,7 +9,9 @@ from .dashboard import router as dashboard_router
 from .data_sources import router as data_sources_router
 from .deprecated_webhooks import router as deprecated_webhooks_router
 from .developers import router as developers_router
+from .eating_events import router as eating_events_router
 from .events import router as events_router
+from .habits import router as habits_router
 from .health_scores import router as health_scores_router
 from .import_xml import router as import_xml_router
 from .invitations import router as invitations_router
@@ -51,6 +53,8 @@ v1_router.include_router(sdk_token_router, tags=["External: Mobile SDK"])
 v1_router.include_router(user_invitation_code_router, tags=["External: Mobile SDK"])
 v1_router.include_router(token_router, tags=["External: Token"])
 v1_router.include_router(data_sources_router, tags=["External: Data Sources"])
+v1_router.include_router(eating_events_router, tags=["External: Eating Events"])
+v1_router.include_router(habits_router, tags=["External: Habits"])
 v1_router.include_router(outgoing_webhooks_router, prefix="/webhooks", tags=["External: Webhooks"])
 
 # --- Internal: dashboard endpoints ---

@@ -3,8 +3,10 @@ from .archival_repository import ArchivalSettingRepository, DataPointSeriesArchi
 from .data_point_series_repository import DataPointSeriesRepository
 from .data_source_repository import DataSourceRepository
 from .developer_repository import DeveloperRepository
+from .eating_event_repository import EatingEventRepository
 from .event_record_detail_repository import EventRecordDetailRepository
 from .event_record_repository import EventRecordRepository
+from .habit_repository import HabitDefinitionRepository, HabitLogRepository
 from .health_score_repository import HealthScoreRepository
 from .invitation_repository import InvitationRepository
 from .provider_priority_repository import ProviderPriorityRepository
@@ -32,4 +34,7 @@ __all__ = [
     "InvitationRepository",
     "CrudRepository",
     "HealthScoreRepository",
+    "EatingEventRepository",
+    "HabitDefinitionRepository",
+    "HabitLogRepository",
 ]
