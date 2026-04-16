@@ -3,7 +3,7 @@ from datetime import datetime, time, timedelta
 from uuid import UUID
 
 from psycopg.errors import UniqueViolation
-from sqlalchemy import Date, String, asc, case, cast, func, literal_column, text, tuple_
+from sqlalchemy import Date, Interval, String, asc, case, cast, func, literal_column, text, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError as SQLAIntegrityError
 
@@ -475,6 +475,62 @@ class DataPointSeriesRepository(
                 pass
 
         return averages
+
+    def get_daily_hr_aggregates(
+        self,
+        db_session: DbSession,
+        user_id: UUID,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[dict]:
+        """Daily heart-rate aggregates grouped by local date.
+
+        Buckets by `(recorded_at + zone_offset)::date` so a user who travels
+        still gets their readings on the correct local calendar day. Returns
+        one row per (date, source, device_model) with avg/min/max HR and the
+        single resting-HR value reported for that day (if any).
+        """
+        hr_id = get_series_type_id(SeriesType.heart_rate)
+        rhr_id = get_series_type_id(SeriesType.resting_heart_rate)
+
+        local_date = cast(
+            self.model.recorded_at + cast(func.coalesce(self.model.zone_offset, "+00:00"), Interval),
+            Date,
+        ).label("local_date")
+
+        results = (
+            db_session.query(
+                local_date,
+                DataSource.source.label("source"),
+                DataSource.device_model.label("device_model"),
+                func.avg(case((self.model.series_type_definition_id == hr_id, self.model.value))).label("hr_avg"),
+                func.min(case((self.model.series_type_definition_id == hr_id, self.model.value))).label("hr_min"),
+                func.max(case((self.model.series_type_definition_id == hr_id, self.model.value))).label("hr_max"),
+                func.avg(case((self.model.series_type_definition_id == rhr_id, self.model.value))).label("rhr_avg"),
+            )
+            .join(DataSource, self.model.data_source_id == DataSource.id)
+            .filter(
+                DataSource.user_id == user_id,
+                self.model.recorded_at >= start_date,
+                self.model.recorded_at < end_date,
+                self.model.series_type_definition_id.in_([hr_id, rhr_id]),
+            )
+            .group_by(local_date, DataSource.source, DataSource.device_model)
+            .all()
+        )
+
+        return [
+            {
+                "local_date": row.local_date,
+                "source": row.source,
+                "device_model": row.device_model,
+                "hr_avg": float(row.hr_avg) if row.hr_avg is not None else None,
+                "hr_min": float(row.hr_min) if row.hr_min is not None else None,
+                "hr_max": float(row.hr_max) if row.hr_max is not None else None,
+                "rhr_avg": float(row.rhr_avg) if row.rhr_avg is not None else None,
+            }
+            for row in results
+        ]
 
     def get_daily_activity_aggregates(
         self,
