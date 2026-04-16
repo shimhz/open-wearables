@@ -1,7 +1,8 @@
-"""API endpoints for managing global provider priorities."""
+"""API endpoints for managing global provider priorities and per-user overrides."""
 
 from logging import getLogger
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Path
 
@@ -12,12 +13,16 @@ from app.schemas.model_crud.data_priority import (
     DeviceTypePriorityListResponse,
     DeviceTypePriorityResponse,
     DeviceTypePriorityUpdate,
+    EffectiveProviderPriorityListResponse,
     ProviderPriorityBulkUpdate,
     ProviderPriorityListResponse,
     ProviderPriorityResponse,
     ProviderPriorityUpdate,
+    UserProviderPriorityBulkUpdate,
+    UserProviderPriorityResponse,
+    UserProviderPriorityUpdate,
 )
-from app.services import DeveloperDep, PriorityService
+from app.services import ApiKeyDep, DeveloperDep, PriorityService
 
 router = APIRouter()
 priority_service = PriorityService(log=getLogger(__name__))
@@ -57,6 +62,63 @@ def bulk_update_provider_priorities(
     update: ProviderPriorityBulkUpdate,
 ) -> ProviderPriorityListResponse:
     return priority_service.bulk_update_priorities(db, update)
+
+
+@router.get(
+    "/users/{user_id}/priorities/providers",
+    summary="Get effective provider priorities for a user",
+)
+def get_user_provider_priorities(
+    db: DbSession,
+    _api_key: ApiKeyDep,
+    user_id: Annotated[UUID, Path(description="User ID")],
+) -> EffectiveProviderPriorityListResponse:
+    """Returns the user's effective provider order.
+
+    Each item indicates whether its priority came from a user override
+    (`source: "user"`) or the global default (`source: "global"`).
+    """
+    return priority_service.get_effective_user_provider_priorities(db, user_id)
+
+
+@router.put(
+    "/users/{user_id}/priorities/providers/{provider}",
+    summary="Set user override for one provider",
+)
+def update_user_provider_priority(
+    db: DbSession,
+    _api_key: ApiKeyDep,
+    user_id: Annotated[UUID, Path(description="User ID")],
+    provider: Annotated[ProviderName, Path(description="Provider name enum")],
+    update: UserProviderPriorityUpdate,
+) -> UserProviderPriorityResponse:
+    return priority_service.update_user_provider_priority(db, user_id, provider, update.priority)
+
+
+@router.put(
+    "/users/{user_id}/priorities/providers",
+    summary="Bulk set user overrides for providers",
+)
+def bulk_update_user_provider_priorities(
+    db: DbSession,
+    _api_key: ApiKeyDep,
+    user_id: Annotated[UUID, Path(description="User ID")],
+    update: UserProviderPriorityBulkUpdate,
+) -> EffectiveProviderPriorityListResponse:
+    return priority_service.bulk_update_user_provider_priorities(db, user_id, update)
+
+
+@router.delete(
+    "/users/{user_id}/priorities/providers/{provider}",
+    summary="Reset one provider back to the global default",
+)
+def reset_user_provider_priority(
+    db: DbSession,
+    _api_key: ApiKeyDep,
+    user_id: Annotated[UUID, Path(description="User ID")],
+    provider: Annotated[ProviderName, Path(description="Provider name enum")],
+) -> EffectiveProviderPriorityListResponse:
+    return priority_service.reset_user_provider_priority(db, user_id, provider)
 
 
 @router.get(

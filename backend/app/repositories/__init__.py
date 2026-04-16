@@ -11,6 +11,7 @@ from .provider_priority_repository import ProviderPriorityRepository
 from .refresh_token_repository import RefreshTokenRepository, refresh_token_repository
 from .repositories import CrudRepository
 from .user_connection_repository import UserConnectionRepository
+from .user_provider_priority_repository import UserProviderPriorityRepository
 from .user_repository import UserRepository
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "DataPointSeriesRepository",
     "DataSourceRepository",
     "ProviderPriorityRepository",
+    "UserProviderPriorityRepository",
     "RefreshTokenRepository",
     "refresh_token_repository",
     "UserConnectionRepository",
