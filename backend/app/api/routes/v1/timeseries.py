@@ -8,7 +8,7 @@ from app.schemas.enums import SeriesType
 from app.schemas.model_crud.activities import TimeSeriesQueryParams
 from app.schemas.responses.activity import TimeSeriesSample
 from app.schemas.utils import PaginatedResponse
-from app.services import ApiKeyDep, timeseries_service
+from app.services import UserScopedAuthDep, timeseries_service
 from app.utils.dates import parse_query_datetime
 
 router = APIRouter()
@@ -20,7 +20,7 @@ def get_timeseries(
     start_time: str,
     end_time: str,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
     types: Annotated[list[SeriesType], Query()] = [],
     resolution: Literal["raw", "1min", "5min", "15min", "1hour"] = "raw",
     cursor: str | None = None,

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Response, status
 from app.database import DbSession
 from app.schemas.enums import ProviderName
 from app.schemas.model_crud.user_management import UserConnectionWithCapabilities
-from app.services import ApiKeyDep, user_connection_service
+from app.services import UserScopedAuthDep, user_connection_service
 from app.services.providers.factory import ProviderFactory
 
 router = APIRouter()
@@ -26,7 +26,7 @@ def _with_capabilities(conn: object) -> UserConnectionWithCapabilities:
 def get_connections_endpoint(
     user_id: UUID,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
 ):
     """Get all connections for a user, enriched with provider capability metadata."""
     return [_with_capabilities(conn) for conn in user_connection_service.get_connections_by_user(db, user_id)]
@@ -37,7 +37,7 @@ def disconnect_provider_endpoint(
     user_id: UUID,
     provider: ProviderName,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
 ) -> Response:
     """Disconnect a user from a provider, revoking the connection and clearing tokens."""
     strategy = ProviderFactory().get_provider(provider.value)

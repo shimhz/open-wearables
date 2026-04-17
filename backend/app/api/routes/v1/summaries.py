@@ -12,7 +12,7 @@ from app.schemas.responses.activity import (
 )
 from app.schemas.responses.dashboard import UserDataSummaryResponse
 from app.schemas.utils import PaginatedResponse
-from app.services import ApiKeyDep, system_info_service
+from app.services import UserScopedAuthDep, system_info_service
 from app.services.summaries_service import summaries_service
 from app.utils.dates import parse_query_datetime
 
@@ -25,7 +25,7 @@ def get_activity_summary(
     start_date: str,
     end_date: str,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=400)] = 50,
     sort_order: Annotated[str, Query(pattern="^(asc|desc)$")] = "asc",
@@ -47,7 +47,7 @@ def get_sleep_summary(
     start_date: str,
     end_date: str,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> PaginatedResponse[SleepSummary]:
@@ -63,7 +63,7 @@ def get_recovery_summary(
     start_date: str,
     end_date: str,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> PaginatedResponse[RecoverySummary]:
@@ -75,7 +75,7 @@ def get_recovery_summary(
 def get_body_summary(
     user_id: UUID,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
     average_period: Annotated[int, Query(ge=1, le=7, description="Days to average vitals (1-7)")] = 7,
     latest_window_hours: Annotated[
         int, Query(ge=1, le=24, description="Hours for latest readings to be considered valid (1-24)")
@@ -100,7 +100,7 @@ def get_body_summary(
 def get_data_summary(
     user_id: UUID,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
 ) -> UserDataSummaryResponse:
     """Returns per-user data counts grouped by series type, event type, and provider."""
     return system_info_service.get_user_data_summary(db, user_id)

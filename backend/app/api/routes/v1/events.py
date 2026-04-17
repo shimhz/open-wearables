@@ -10,7 +10,7 @@ from app.schemas.responses.activity import (
     Workout,
 )
 from app.schemas.utils import PaginatedResponse
-from app.services import ApiKeyDep
+from app.services import UserScopedAuthDep
 from app.services.event_record_service import event_record_service
 from app.utils.dates import parse_query_datetime
 
@@ -23,7 +23,7 @@ def list_workouts(
     start_date: str,
     end_date: str,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
     record_type: str | None = None,
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
@@ -45,7 +45,7 @@ def list_sleep_sessions(
     start_date: str,
     end_date: str,
     db: DbSession,
-    _api_key: ApiKeyDep,
+    _auth: UserScopedAuthDep,
     cursor: str | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> PaginatedResponse[SleepSession]:

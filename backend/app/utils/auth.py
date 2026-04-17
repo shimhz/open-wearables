@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Path, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
@@ -140,3 +140,16 @@ async def get_sdk_auth(
 
 
 SDKAuthDep = Annotated[SDKAuthContext, Depends(get_sdk_auth)]
+
+
+async def require_user_scope(
+    user_id: UUID = Path(...),
+    auth: SDKAuthContext = Depends(get_sdk_auth),
+) -> SDKAuthContext:
+    """Accept SDK token or API key; when SDK token, enforce token.user_id == path user_id."""
+    if auth.auth_type == "sdk_token" and (auth.user_id is None or auth.user_id != user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token does not match user_id")
+    return auth
+
+
+UserScopedAuthDep = Annotated[SDKAuthContext, Depends(require_user_scope)]

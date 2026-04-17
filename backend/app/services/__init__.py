@@ -1,4 +1,4 @@
-from app.utils.auth import DeveloperDep, SDKAuthDep
+from app.utils.auth import DeveloperDep, SDKAuthDep, UserScopedAuthDep
 
 from .api_key_service import ApiKeyDep, api_key_service
 from .apple.apple_xml.presigned_url_service import presigned_url_service
@@ -32,6 +32,7 @@ __all__ = [
     "DeveloperDep",
     "ApiKeyDep",
     "SDKAuthDep",
+    "UserScopedAuthDep",
     "user_connection_service",
     "user_service",
     "hk_import_service",
